@@ -39,10 +39,14 @@ I also used Python dataclasses for `Owner`, `Pet`, `Task`, and `Scheduler` to ke
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
+My scheduler considers three constraints: the **time** a task is due, its **priority** (low/medium/high), and the **duration** it takes. Time matters most for ordering the day, so `sort_by_time()` sorts everything chronologically. When there is a limited time budget, `generate_daily_plan()` uses priority as the tiebreaker so the most important tasks (like medication) are kept first and low-priority tasks are dropped if the day runs out of time. I decided time and priority mattered most because a pet owner's real question is "what do I do next, and what can't I skip?"
+
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
+
+My conflict detector (`detect_conflicts()`) only flags tasks that share the **exact same start time**, not tasks whose durations *overlap*. For example, a 30-minute walk at 08:00 and a feeding at 08:15 would not be flagged, even though they overlap in real life. I chose exact-time matching because it is simple, fast, and easy to reason about, and it catches the most common mistake (double-booking the same slot) without the added complexity of interval math. For a lightweight pet-care helper this is a reasonable tradeoff: it warns the owner about obvious clashes and returns a friendly message instead of crashing, and true interval-overlap detection can be added later if needed.
 
 ---
 

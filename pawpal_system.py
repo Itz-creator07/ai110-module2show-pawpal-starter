@@ -61,6 +61,28 @@ class Task:
             return False
         return self.due_date < datetime.now()
 
+    def next_occurrence(self) -> "Task | None":
+        """Return a fresh copy of this task for its next recurrence, or None.
+
+        Uses timedelta to shift the due date forward (e.g., +1 day for a
+        daily task). Returns None if the task is not recurring.
+        """
+        if self.recurrence is None or self.due_date is None:
+            return None
+        new_due = self.due_date + self.recurrence
+        return Task(
+            id=f"{self.id}@{new_due.strftime('%Y%m%d%H%M')}",
+            title=self.title,
+            task_type=self.task_type,
+            duration=self.duration,
+            priority=self.priority,
+            due_date=new_due,
+            recurrence=self.recurrence,
+            completed=False,
+            description=self.description,
+            pet=self.pet,
+        )
+
     def time_label(self) -> str:
         """Return a short HH:MM label for the task's due time, or '--:--'."""
         return self.due_date.strftime("%H:%M") if self.due_date else "--:--"
@@ -154,6 +176,58 @@ class Scheduler:
         """Pull every task from the owner's pets into the scheduler."""
         for task in owner.get_all_tasks():
             self.schedule_task(task)
+
+    def sort_by_time(self) -> list[Task]:
+        """Return all scheduled tasks ordered chronologically by due time.
+
+        Uses sorted() with a lambda key so timeless tasks sort to the end.
+        """
+        return sorted(self.tasks, key=lambda t: t.due_date or datetime.max)
+
+    def filter_by_status(self, completed: bool) -> list[Task]:
+        """Return scheduled tasks matching the given completion status."""
+        return [t for t in self.tasks if t.completed == completed]
+
+    def filter_by_pet(self, pet_name: str) -> list[Task]:
+        """Return scheduled tasks whose pet name matches (case-insensitive)."""
+        name = pet_name.lower()
+        return [t for t in self.tasks if t.pet and t.pet.name.lower() == name]
+
+    def complete_task(self, task: Task) -> "Task | None":
+        """Mark a task complete; if it recurs, schedule its next occurrence.
+
+        Returns the newly created follow-up task, or None for one-off tasks.
+        """
+        task.mark_complete()
+        follow_up = task.next_occurrence()
+        if follow_up is not None:
+            self.schedule_task(follow_up)
+            if follow_up.pet is not None:
+                follow_up.pet.tasks.append(follow_up)
+        return follow_up
+
+    def detect_conflicts(self) -> list[str]:
+        """Return warning messages for tasks scheduled at the same time.
+
+        Lightweight check: flags exact due-time matches rather than raising,
+        so the caller can surface a warning without crashing.
+        """
+        warnings: list[str] = []
+        by_time: dict[datetime, list[Task]] = {}
+        for task in self.tasks:
+            if task.due_date is None:
+                continue
+            by_time.setdefault(task.due_date, []).append(task)
+
+        for when, clashing in by_time.items():
+            if len(clashing) > 1:
+                titles = ", ".join(
+                    f"{t.title} ({t.pet.name if t.pet else '?'})" for t in clashing
+                )
+                warnings.append(
+                    f"Conflict at {when.strftime('%H:%M')}: {titles}"
+                )
+        return warnings
 
     def get_tasks_for_pet(self, pet: Pet) -> list[Task]:
         """Return all scheduled tasks belonging to a given pet."""

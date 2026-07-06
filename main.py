@@ -1,7 +1,8 @@
 """CLI demo for PawPal+.
 
-A temporary testing ground that builds an owner, some pets and tasks,
-then prints today's schedule to verify the logic layer works end to end.
+A temporary testing ground that builds an owner, pets, and tasks, then
+exercises the scheduler's smart features (sorting, filtering, recurrence,
+and conflict detection) from the terminal.
 Run with:  python main.py
 """
 
@@ -12,8 +13,7 @@ from pawpal_system import Owner, Pet, Priority, Scheduler, Task, TaskType
 
 def _today_at(hour: int, minute: int = 0) -> datetime:
     """Return a datetime for today at the given time."""
-    now = datetime.now()
-    return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    return datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
 
 
 def build_demo() -> tuple[Owner, Scheduler]:
@@ -25,20 +25,27 @@ def build_demo() -> tuple[Owner, Scheduler]:
     owner.add_pet(biscuit)
     owner.add_pet(mittens)
 
+    # Added intentionally OUT OF ORDER to prove sort_by_time() works.
     biscuit.add_task(Task(
-        id="t1", title="Morning walk", task_type=TaskType.WALK,
-        duration=timedelta(minutes=30), priority=Priority.HIGH,
-        due_date=_today_at(8, 0),
+        id="t1", title="Evening walk", task_type=TaskType.WALK,
+        duration=timedelta(minutes=30), priority=Priority.MEDIUM,
+        due_date=_today_at(18, 0),
     ))
     biscuit.add_task(Task(
-        id="t2", title="Feeding", task_type=TaskType.FEEDING,
+        id="t2", title="Morning feeding", task_type=TaskType.FEEDING,
         duration=timedelta(minutes=10), priority=Priority.HIGH,
-        due_date=_today_at(9, 0),
+        due_date=_today_at(8, 0), recurrence=timedelta(days=1),  # daily
     ))
     mittens.add_task(Task(
         id="t3", title="Litter cleanup", task_type=TaskType.GROOMING,
         duration=timedelta(minutes=15), priority=Priority.MEDIUM,
-        due_date=_today_at(18, 30),
+        due_date=_today_at(12, 0),
+    ))
+    # Deliberate conflict: same time (12:00) as Mittens' litter cleanup.
+    biscuit.add_task(Task(
+        id="t4", title="Midday meds", task_type=TaskType.MEDICATION,
+        duration=timedelta(minutes=5), priority=Priority.HIGH,
+        due_date=_today_at(12, 0),
     ))
 
     scheduler = Scheduler()
@@ -46,30 +53,39 @@ def build_demo() -> tuple[Owner, Scheduler]:
     return owner, scheduler
 
 
-def print_todays_schedule(owner: Owner, scheduler: Scheduler) -> None:
-    """Print a readable 'Today's Schedule' grouped by pet."""
-    today = datetime.now()
-    print(f"Today's Schedule for {owner.name} - {today.strftime('%A, %b %d')}")
-    print("=" * 48)
-
-    plan = scheduler.generate_daily_plan(today)
-    if not plan:
-        print("  (no tasks scheduled for today)")
-        return
-
-    for pet in owner.list_pets():
-        pet_tasks = [t for t in plan if t.pet is pet]
-        if not pet_tasks:
-            continue
-        print(f"\n{pet}")
-        for task in pet_tasks:
-            print(f"  {task}")
-
-
 def main() -> None:
-    """Build the demo data and print today's schedule."""
+    """Build demo data and exercise the scheduler's smart features."""
     owner, scheduler = build_demo()
-    print_todays_schedule(owner, scheduler)
+    today = datetime.now()
+
+    print(f"Today's Schedule for {owner.name} - {today.strftime('%A, %b %d')}")
+    print("=" * 52)
+    print("\nSorted by time (Scheduler.sort_by_time):")
+    for task in scheduler.sort_by_time():
+        print(f"  {task}")
+
+    print("\nFilter - only Biscuit's tasks (Scheduler.filter_by_pet):")
+    for task in scheduler.filter_by_pet("Biscuit"):
+        print(f"  {task}")
+
+    print("\nConflict detection (Scheduler.detect_conflicts):")
+    conflicts = scheduler.detect_conflicts()
+    if conflicts:
+        for warning in conflicts:
+            print(f"  WARNING: {warning}")
+    else:
+        print("  No conflicts found.")
+
+    print("\nRecurrence (complete daily 'Morning feeding'):")
+    feeding = next(t for t in scheduler.tasks if t.title == "Morning feeding")
+    follow_up = scheduler.complete_task(feeding)
+    if follow_up:
+        print(f"  Completed today's feeding; next one auto-scheduled for "
+              f"{follow_up.due_date.strftime('%b %d %H:%M')}")
+
+    print("\nRemaining incomplete tasks (Scheduler.filter_by_status):")
+    for task in scheduler.filter_by_status(completed=False):
+        print(f"  {task}")
 
 
 if __name__ == "__main__":
