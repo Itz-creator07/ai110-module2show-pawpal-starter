@@ -44,7 +44,9 @@ class Task:
     recurrence: timedelta | None = None
     completed: bool = False
     description: str = ""
-    pet: "Pet | None" = None
+    # Back-reference to the owning Pet. Excluded from __eq__/__repr__ to avoid
+    # infinite recursion from the Pet <-> Task reference cycle.
+    pet: "Pet | None" = field(default=None, compare=False, repr=False)
 
     def mark_complete(self) -> None:
         """Mark this task as done."""
@@ -106,7 +108,9 @@ class Pet:
     species: str
     breed: str = ""
     age: int = 0
-    owner: "Owner | None" = None
+    # Back-reference to the owning Owner. Excluded from __eq__/__repr__ to avoid
+    # infinite recursion from the Owner <-> Pet reference cycle.
+    owner: "Owner | None" = field(default=None, compare=False, repr=False)
     tasks: list[Task] = field(default_factory=list)
 
     def add_task(self, task: Task) -> None:
