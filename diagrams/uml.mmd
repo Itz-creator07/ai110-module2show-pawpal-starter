@@ -1,15 +1,55 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
+    %% Pet care scheduling application — PawPal
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +String id
+        +String name
+        +String email
+        +String phone
+        +List~Pet~ pets
+        +addPet(pet Pet) void
+        +removePet(petId String) void
+        +listPets() List~Pet~
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +String id
+        +String name
+        +String species
+        +String breed
+        +int age
+        +Owner owner
+        +List~Task~ tasks
+        +addTask(task Task) void
+        +getUpcomingTasks() List~Task~
     }
 
-    ClassName --> AnotherClass : relationship
+    class Task {
+        +String id
+        +String title
+        +String description
+        +TaskType type
+        +DateTime dueDate
+        +Duration recurrence
+        +boolean completed
+        +Pet pet
+        +markComplete() void
+        +reschedule(newDate DateTime) void
+        +isOverdue() boolean
+    }
+
+    class Scheduler {
+        +String id
+        +List~Task~ tasks
+        +scheduleTask(task Task) void
+        +cancelTask(taskId String) void
+        +getTasksForPet(pet Pet) List~Task~
+        +getTasksForDate(date DateTime) List~Task~
+        +getOverdueTasks() List~Task~
+        +sendReminders() void
+    }
+
+    Owner "1" --> "0..*" Pet : owns
+    Pet "1" --> "0..*" Task : has
+    Scheduler "1" o-- "0..*" Task : manages
+    Task "0..*" --> "1" Pet : belongs to
