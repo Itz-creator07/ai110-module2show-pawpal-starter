@@ -1,0 +1,87 @@
+classDiagram
+    %% PawPal+ — final architecture (matches pawpal_system.py)
+
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class TaskType {
+        <<enumeration>>
+        WALK
+        FEEDING
+        MEDICATION
+        GROOMING
+        ENRICHMENT
+        OTHER
+    }
+
+    class Owner {
+        +String id
+        +String name
+        +String email
+        +String phone
+        +List~Pet~ pets
+        +add_pet(pet Pet) void
+        +remove_pet(pet_id String) void
+        +list_pets() List~Pet~
+        +get_all_tasks() List~Task~
+    }
+
+    class Pet {
+        +String id
+        +String name
+        +String species
+        +String breed
+        +int age
+        +Owner owner
+        +List~Task~ tasks
+        +add_task(task Task) void
+        +get_upcoming_tasks() List~Task~
+    }
+
+    class Task {
+        +String id
+        +String title
+        +TaskType task_type
+        +timedelta duration
+        +Priority priority
+        +datetime due_date
+        +timedelta recurrence
+        +boolean completed
+        +String description
+        +Pet pet
+        +mark_complete() void
+        +reschedule(new_date datetime) void
+        +is_overdue() boolean
+        +next_occurrence() Task
+        +time_label() String
+    }
+
+    class Scheduler {
+        +String id
+        +List~Task~ tasks
+        +schedule_task(task Task) void
+        +cancel_task(task_id String) void
+        +load_from_owner(owner Owner) void
+        +sort_by_time() List~Task~
+        +filter_by_status(completed bool) List~Task~
+        +filter_by_pet(pet_name String) List~Task~
+        +complete_task(task Task) Task
+        +detect_conflicts() List~String~
+        +generate_daily_plan(date datetime, available_time timedelta) List~Task~
+        +get_tasks_for_pet(pet Pet) List~Task~
+        +get_tasks_for_date(date datetime) List~Task~
+        +get_overdue_tasks() List~Task~
+        +send_reminders() List~String~
+    }
+
+    Owner "1" --> "0..*" Pet : owns
+    Pet "1" --> "0..*" Task : has
+    Scheduler "1" o-- "0..*" Task : manages
+    Task "0..*" --> "1" Pet : belongs to
+    Task ..> Priority : uses
+    Task ..> TaskType : uses
+    Scheduler ..> Owner : loads tasks from

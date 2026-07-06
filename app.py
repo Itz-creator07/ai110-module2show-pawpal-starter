@@ -95,9 +95,22 @@ st.divider()
 
 # --- Today's schedule --------------------------------------------------------
 st.subheader("Today's Schedule")
+
+show_completed = st.checkbox("Show completed tasks", value=False)
+
 if st.button("Generate schedule"):
-    plan = scheduler.generate_daily_plan(datetime.now())
-    if not plan:
+    # Surface any scheduling conflicts before showing the plan.
+    for warning in scheduler.detect_conflicts():
+        st.warning(f"⚠️ {warning}")
+
+    tasks = scheduler.sort_by_time()
+    if not show_completed:
+        tasks = [t for t in tasks if not t.completed]
+    # Keep only today's tasks.
+    today = datetime.now().date()
+    tasks = [t for t in tasks if t.due_date and t.due_date.date() == today]
+
+    if not tasks:
         st.info("No tasks scheduled for today yet.")
     else:
         rows = [
@@ -109,6 +122,7 @@ if st.button("Generate schedule"):
                 "Priority": t.priority.name.lower(),
                 "Done": "✅" if t.completed else "",
             }
-            for t in plan
+            for t in tasks
         ]
+        st.success(f"Planned {len(rows)} task(s) for today.")
         st.table(rows)

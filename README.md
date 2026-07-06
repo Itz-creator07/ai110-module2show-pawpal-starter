@@ -22,6 +22,16 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## ✨ Features
+
+- **Owner / Pet / Task modeling** — an owner manages multiple pets, each with its own care tasks (`pawpal_system.py`).
+- **Sorting by time** — `Scheduler.sort_by_time()` orders the day chronologically.
+- **Priority-aware daily plan** — `Scheduler.generate_daily_plan()` keeps the highest-priority tasks first and drops low-priority ones when a time budget runs out.
+- **Filtering** — by pet (`filter_by_pet`) or by completion status (`filter_by_status`).
+- **Conflict warnings** — `detect_conflicts()` flags tasks booked at the same time and returns a friendly message instead of crashing.
+- **Recurring tasks** — completing a daily/weekly task auto-schedules the next occurrence (`complete_task` + `Task.next_occurrence`).
+- **Streamlit UI** — add pets/tasks and view today's sorted schedule with conflict warnings (`app.py`).
+
 ## Getting started
 
 ### Setup
@@ -48,14 +58,24 @@ Output from running the CLI demo (`python main.py`):
 
 ```
 Today's Schedule for Alex - Monday, Jul 06
-================================================
+====================================================
 
-Biscuit (Golden Retriever) - Dog
-  08:00  Morning walk (30 min) [priority: high] [todo]
-  09:00  Feeding (10 min) [priority: high] [todo]
+Sorted by time (Scheduler.sort_by_time):
+  08:00  Morning feeding (10 min) [priority: high] [todo]
+  12:00  Midday meds (5 min) [priority: high] [todo]
+  12:00  Litter cleanup (15 min) [priority: medium] [todo]
+  18:00  Evening walk (30 min) [priority: medium] [todo]
 
-Mittens (Tabby) - Cat
-  18:30  Litter cleanup (15 min) [priority: medium] [todo]
+Filter - only Biscuit's tasks (Scheduler.filter_by_pet):
+  18:00  Evening walk (30 min) [priority: medium] [todo]
+  08:00  Morning feeding (10 min) [priority: high] [todo]
+  12:00  Midday meds (5 min) [priority: high] [todo]
+
+Conflict detection (Scheduler.detect_conflicts):
+  WARNING: Conflict at 12:00: Midday meds (Biscuit), Litter cleanup (Mittens)
+
+Recurrence (complete daily 'Morning feeding'):
+  Completed today's feeding; next one auto-scheduled for Jul 07 08:00
 ```
 
 ## 🧪 Testing PawPal+
@@ -109,12 +129,42 @@ scheduler more helpful:
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+Launch the UI with `streamlit run app.py`, or run the CLI demo with `python main.py`.
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+**Main UI features (`app.py`):**
+
+- Set the **owner name**.
+- **Add a Pet** — name, species, and optional breed. Pets persist in `st.session_state` across reruns.
+- **Schedule a Task** — pick a pet, title, type, time, duration, and priority.
+- **Today's Schedule** — a "Generate schedule" button shows the day's tasks in a sorted table, surfaces conflict warnings, and can optionally show completed tasks.
+
+**Example workflow:**
+
+1. Enter the owner name (e.g., "Alex").
+2. Add a pet — "Biscuit", a dog.
+3. Schedule a task — "Morning feeding" at 08:00, high priority.
+4. Add a second pet ("Mittens") and a task that clashes at the same time as another.
+5. Click **Generate schedule** to see the sorted plan and a ⚠️ conflict warning.
+
+**Key Scheduler behaviors shown:** chronological sorting (`sort_by_time`), priority-aware planning (`generate_daily_plan`), conflict warnings (`detect_conflicts`), filtering (`filter_by_pet` / `filter_by_status`), and recurring tasks (`complete_task`).
+
+**Sample CLI output** from `python main.py`:
+
+```
+Today's Schedule for Alex - Monday, Jul 06
+====================================================
+
+Sorted by time (Scheduler.sort_by_time):
+  08:00  Morning feeding (10 min) [priority: high] [todo]
+  12:00  Midday meds (5 min) [priority: high] [todo]
+  12:00  Litter cleanup (15 min) [priority: medium] [todo]
+  18:00  Evening walk (30 min) [priority: medium] [todo]
+
+Conflict detection (Scheduler.detect_conflicts):
+  WARNING: Conflict at 12:00: Midday meds (Biscuit), Litter cleanup (Mittens)
+
+Recurrence (complete daily 'Morning feeding'):
+  Completed today's feeding; next one auto-scheduled for Jul 07 08:00
+```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

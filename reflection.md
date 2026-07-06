@@ -57,10 +57,20 @@ My conflict detector (`detect_conflicts()`) only flags tasks that share the **ex
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
 - What kinds of prompts or questions were most helpful?
 
+I used my AI coding assistant across every phase. The most effective features were:
+
+- **Agent/edit mode** for scaffolding — generating the class skeletons from my UML and later fleshing out method bodies across `pawpal_system.py`, `main.py`, and `app.py` at once.
+- **Chat** for targeted questions — e.g., how the `Scheduler` should reach the `Owner`'s pets to gather tasks, and how to use a `sorted()` lambda key to order tasks by time.
+- **Test generation** — drafting pytest cases for sorting, recurrence, and conflict detection, then explaining what each assertion verified.
+
+The most helpful prompts were specific and referenced my actual files ("based on my skeletons in `pawpal_system.py`, how should the Scheduler retrieve all tasks from the Owner's pets?") rather than vague ones.
+
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
 - How did you evaluate or verify what the AI suggested?
+
+The assistant initially rendered schedule output with an em-dash (`—`) and Unicode formatting. On my Windows terminal that printed as garbled characters (`�`). I rejected the "prettier" version and switched to a plain ASCII hyphen so the CLI output and the README sample would be readable in any terminal. I verified every AI suggestion by actually running `python main.py` and `python -m pytest` and reading the output, rather than trusting that the code "looked correct."
 
 ---
 
@@ -71,10 +81,14 @@ My conflict detector (`detect_conflicts()`) only flags tasks that share the **ex
 - What behaviors did you test?
 - Why were these tests important?
 
+I wrote eight pytest cases covering: task completion flipping status, adding a task increasing a pet's count, `sort_by_time()` returning chronological order, a daily task auto-creating its next occurrence, a one-off task creating no follow-up, `detect_conflicts()` flagging duplicate times, no false conflicts when times differ, and an edge case of a pet with no tasks. These matter because sorting, recurrence, and conflict detection are the "smart" behaviors an owner actually relies on — a bug there would silently produce a wrong daily plan.
+
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
+
+I am about 4/5 confident. All core behaviors and algorithms are covered and passing. With more time I would test overlapping-duration conflicts (not just exact-time matches), weekly recurrence crossing month boundaries, and time-budget behavior in `generate_daily_plan()` when tasks don't fit.
 
 ---
 
@@ -84,10 +98,16 @@ My conflict detector (`detect_conflicts()`) only flags tasks that share the **ex
 
 - What part of this project are you most satisfied with?
 
+I'm most satisfied with the clean separation between the logic layer (`pawpal_system.py`) and the UI (`app.py`). Building and verifying the "brain" from the terminal first meant that wiring up Streamlit was mostly plumbing, and the same methods are exercised by the CLI demo, the tests, and the UI.
+
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
 
+I would upgrade conflict detection from exact-time matching to true interval-overlap detection using each task's duration, and I'd make recurrence smarter (e.g., skip past occurrences and support weekly/monthly cadences explicitly rather than a raw `timedelta`).
+
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+The biggest lesson was that I am the lead architect and the AI is a fast collaborator, not the decision-maker. Designing the UML first gave the AI a clear target, using separate chat sessions per phase kept its suggestions focused, and running the code myself was what actually confirmed correctness. AI accelerated the work, but the design judgment and verification stayed with me.
