@@ -60,26 +60,40 @@ Mittens (Tabby) - Cat
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+Run the automated suite from the project root:
 
-# Run with coverage:
-pytest --cov
+```bash
+python -m pytest
 ```
+
+**What the tests cover** (`tests/test_pawpal.py`):
+
+- **Core behavior** — `mark_complete()` flips a task's status; adding a task increases a pet's task count.
+- **Sorting correctness** — `sort_by_time()` returns tasks in chronological order regardless of insertion order.
+- **Recurrence logic** — completing a daily task auto-creates a new task for the next day; a one-off task creates no follow-up.
+- **Conflict detection** — `detect_conflicts()` flags two tasks at the same time and stays silent when times differ.
+- **Edge case** — a pet with no tasks yields an empty plan.
 
 Sample test output:
 
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.14.5, pytest-9.1.1, pluggy-1.6.0
-collected 2 items
+collected 8 items
 
-tests/test_pawpal.py::test_mark_complete_changes_status PASSED           [ 50%]
-tests/test_pawpal.py::test_adding_task_increases_pet_task_count PASSED   [100%]
+tests/test_pawpal.py::test_mark_complete_changes_status PASSED           [ 12%]
+tests/test_pawpal.py::test_adding_task_increases_pet_task_count PASSED   [ 25%]
+tests/test_pawpal.py::test_sort_by_time_returns_chronological_order PASSED [ 37%]
+tests/test_pawpal.py::test_completing_daily_task_creates_next_day_instance PASSED [ 50%]
+tests/test_pawpal.py::test_completing_one_off_task_creates_no_follow_up PASSED [ 62%]
+tests/test_pawpal.py::test_detect_conflicts_flags_duplicate_times PASSED [ 75%]
+tests/test_pawpal.py::test_no_conflicts_when_times_differ PASSED         [ 87%]
+tests/test_pawpal.py::test_pet_with_no_tasks_has_empty_plan PASSED       [100%]
 
-============================== 2 passed in 0.08s ==============================
+============================== 8 passed in 0.06s ==============================
 ```
+
+**Confidence level: ★★★★☆ (4/5)** — the core object behavior and each smart-scheduling algorithm are covered and green. Docking one star because conflict detection only checks exact-time matches (not overlapping durations) and the recurrence tests cover daily intervals but not every edge case (e.g., weekly across month boundaries).
 
 ## 📐 Smarter Scheduling
 
